@@ -24,23 +24,38 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <aby.h>
+#include <identifier.h>
+#include <output.h>
+#include <scanner.h>
+#include <program.h>
 
 int main(int argc, char** argv)
 {
+    /*
     system("../aspelc/Debug/aspelc -o test.aml test.aspel");
     system("../aasm/Debug/aasm -o test.aby test.aml");
+    */
 
-    FILE* pF = fopen("test.aby", "rb");
-    struct AVM_ABY* aby = AVM_ABY_new(pF);
+    FILE* pF = fopen("../aspel/test.aspel", "rb");
+    fseek(pF, 0, SEEK_END);
+    AC_uint size = ftell(pF);
+    fseek(pF, 0, SEEK_SET);
+    AC_byte* src = malloc(size);
+    fread(src, 1, size, pF);
     fclose(pF);
 
-    AVM_ABY_push_nativelib(aby, AVM_nativelib_new("../asl11/Debug/libasl11"));
-    AVM_ABY_link(aby);
+    struct AC_output* output = AC_output_make("../aspel/test.aml");
+    struct AC_scanner* scanner = AC_scanner_make(src, size);
+    struct AC_program* program = AC_program_make(scanner);
 
-    AVM_ABY_execute(aby);
+    AC_program_translate(program, output);
 
-    AVM_ABY_free(aby);
+    AC_program_destroy(program);
+    AC_scanner_destroy(scanner);
+    AC_output_destroy(output);
+    free(src);
+
+    printf("successful pass\n");
 
     return 0;
 }
